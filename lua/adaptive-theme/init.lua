@@ -7,10 +7,10 @@ local default_theme_handler = function(background)
 	vim.o.background = background
 end
 
-local theme_callback = function(theme_handler)
+local function theme_callback(theme_handler)
 	local uv = vim.loop
 
-	uv.new_async(vim.schedule_wrap(function(background)
+	return uv.new_async(vim.schedule_wrap(function(background)
 		theme_handler(background)
 	end))
 end
@@ -76,6 +76,10 @@ local function adaptive_theme_watcher(callback)
 end
 
 function M.setup(options)
+	if not options then
+		options = {}
+	end
+
 	local uv = vim.loop
 
 	M.theme_handler = options.theme_handler or default_theme_handler
