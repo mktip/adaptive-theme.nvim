@@ -39,7 +39,8 @@ local function adaptive_theme_watcher(callback)
 
     if resp:iter_init():recurse():recurse():get_basic() == 1 then
       return AdaptiveColors.DARK
-    else
+    end
+
 
     return AdaptiveColors.LIGHT
 
@@ -101,6 +102,7 @@ local function adaptive_theme_watcher(callback)
       uv.async_send(callback, parse_msg(msg))
     end
   end
+
 end
 
 function M.setup(options)
@@ -111,8 +113,6 @@ function M.setup(options)
   local uv = vim.loop
 
   M.theme_handler = options.theme_handler or default_theme_handler
-
-
 
   -- Start the watcher thread
   local watcher_thread = uv.new_thread(adaptive_theme_watcher, theme_callback(M.theme_handler))
