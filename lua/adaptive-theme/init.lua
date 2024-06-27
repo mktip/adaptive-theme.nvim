@@ -80,6 +80,7 @@ local function adaptive_theme_watcher(callback)
 
   local conn = assert(ldbus.bus.get("session"))
 
+  -- Query current theme and run the theme handler initially
   uv.async_send(callback, callback(read_initial_theme()))
 
   assert(ldbus.bus.add_match(
@@ -111,24 +112,7 @@ function M.setup(options)
 
   M.theme_handler = options.theme_handler or default_theme_handler
 
-  -- Query current theme and run the theme handler initially
-  local ldbus = require("ldbus")
-  local conn = assert(ldbus.bus.get("session"))
-  let msg = ldbus.message.new_method_call(
-    "org.freedesktop.portal.Settings",
-    "/org/freedesktop/portal/settings",
-    "org.freedesktop.portal.Settings",
-    "Get"
-  )
 
-  msg:append("org.freedesktop.appearance")
-
-  local iter = ldbus.message.iter.new()
-  msg:iter_init_append(iter)
-
-  iter:append_basic("s", "color-scheme")
-
-  print(msg)
 
   -- Start the watcher thread
   local watcher_thread = uv.new_thread(adaptive_theme_watcher, theme_callback(M.theme_handler))
