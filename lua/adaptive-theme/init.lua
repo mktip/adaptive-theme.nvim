@@ -7,6 +7,7 @@ local default_theme_handler = function(background)
 	vim.o.background = background
 end
 
+
 local function theme_callback(theme_handler)
 	local uv = vim.loop
 
@@ -20,6 +21,29 @@ local function adaptive_theme_watcher(callback)
 	local uv = vim.loop
 
 	local AdaptiveColors = { LIGHT = "light", DARK = "dark", NONE = "none" }
+
+  local function read_initial_theme()
+    local conn = assert ( ldbus.bus.get ( "session" ) )
+    local msg = ldbus.message.new_method_call(
+          "org.freedesktop.portal.Desktop",
+          "/org/freedesktop/portal/desktop",
+          "org.freedesktop.portal.Settings",
+          "Read"
+      )
+
+    local iter = msg:iter_init_append()
+    iter:append_basic("org.freedesktop.appearance")
+    iter:append_basic("color-scheme")
+
+    local resp = conn:send_with_reply_and_block(msg)
+
+    if resp:iter_init():recurse():recurse():get_basic() == 1 then
+      return AdaptiveColors.DARK
+    else
+
+    return AdaptiveColors.LIGHT
+
+  end
 
 	local function parse_msg(msg)
 		local iter = ldbus.message.iter.new()
@@ -53,7 +77,10 @@ local function adaptive_theme_watcher(callback)
 		return result
 	end
 
+
 	local conn = assert(ldbus.bus.get("session"))
+
+  uv.async_send(callback, callback(read_initial_theme()))
 
 	assert(ldbus.bus.add_match(
 		conn,
@@ -84,8 +111,28 @@ function M.setup(options)
 
 	M.theme_handler = options.theme_handler or default_theme_handler
 
+  -- Query current theme and run the theme handler initially
+  local ldbus = require("ldbus")
+  local conn = assert(ldbus.bus.get("session"))
+  let msg = ldbus.message.new_method_call(
+    "org.freedesktop.portal.Settings",
+    "/org/freedesktop/portal/settings",
+    "org.freedesktop.portal.Settings",
+    "Get"
+  )
+
+  msg:append("org.freedesktop.appearance")
+
+  local iter = ldbus.message.iter.new()
+  msg:iter_init_append(iter)
+
+  iter:append_basic("s", "color-scheme")
+
+  print(msg)
+
 	-- Start the watcher thread
 	local watcher_thread = uv.new_thread(adaptive_theme_watcher, theme_callback(M.theme_handler))
 end
+
 
 return M
