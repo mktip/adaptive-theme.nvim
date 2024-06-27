@@ -82,7 +82,7 @@ local function adaptive_theme_watcher(callback)
   local conn = assert(ldbus.bus.get("session"))
 
   -- Query current theme and run the theme handler initially
-  uv.async_send(callback, callback(read_initial_theme()))
+  uv.async_send(callback, read_initial_theme())
 
   assert(ldbus.bus.add_match(
     conn,
