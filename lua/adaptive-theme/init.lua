@@ -37,10 +37,13 @@ local function adaptive_theme_watcher(callback)
 
     local resp = conn:send_with_reply_and_block(msg)
 
+    if resp == nil then
+      return AdaptiveColors.NONE
+    end
+
     if resp:iter_init():recurse():recurse():get_basic() == 1 then
       return AdaptiveColors.DARK
     end
-
 
     return AdaptiveColors.LIGHT
 
